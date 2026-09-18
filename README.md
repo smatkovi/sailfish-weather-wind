@@ -1,0 +1,117 @@
+# sailfish-weather-wind
+
+The weather widget of the Sailfish OS Events view shows the temperature and
+a weather symbol for the next days or hours. This package adds two lines
+below every forecast column: the wind speed in m/s and the wind direction,
+in the daily as well as in the hourly forecast.
+
+```
+ Today    Sun     Mon     Tue     Wed     Thu
+  21°     19°     18°     20°     22°     23°
+  ☀       ⛅      🌧       ⛅      ☀       ☀
+  10°     11°     12°     10°     11°     13°
+ 3 m/s   5 m/s   8 m/s   5 m/s   3 m/s   2 m/s
+ ↓ N     ↖ SE    ↘ NW    ↘ NW    ↙ NE    ↑ S
+```
+
+* **Speed** in m/s. The daily view shows the maximum of the day, the same
+  value the Weather app shows on its detail page; the hourly view shows the
+  speed at that hour.
+* **Direction** as an arrow and a compass point. The arrow points where the
+  wind blows to, the same convention as the wind graphic in the Weather app.
+  The letters name the direction the wind comes from, as in weather reports
+  ("NW" is wind from the north-west). They are abbreviated in the language of
+  the phone (German, Dutch, French, Spanish, Italian, Catalan, Portuguese,
+  Finnish, Swedish, Norwegian, Danish, Czech, Slovak, Slovenian, Lithuanian,
+  Latvian, Hungarian, Turkish, Russian and Greek; everything else gets
+  N, NE, E, SE, S, SW, W, NW).
+* The Weather app itself is not changed. Its forecast page keeps the fixed
+  height it has, so the wind lines are switched on only in the Events view.
+
+Tested on Sailfish OS 5.2.0.17 with sailfish-weather 1.3.11.
+
+## Installation
+
+Download the RPM from the [releases](https://github.com/smatkovi/sailfish-weather-wind/releases)
+and install it, for example
+
+```
+devel-su pkcon install-local sailfish-weather-wind-*.noarch.rpm
+```
+
+Afterwards **restart the home screen**: Sailfish Utilities → Restart home
+screen, or in a terminal
+
+```
+systemctl --user restart lipstick
+```
+
+Running apps are closed by that. A reboot works as well.
+
+To remove the change, uninstall the package (`devel-su pkcon remove
+sailfish-weather-wind`) and restart the home screen again.
+
+## How it works
+
+This is not a Patchmanager patch and Patchmanager is not needed. The
+package ships small unified diffs against QML files of Jolla's weather
+packages and applies them with `patch` when it is installed:
+
+| File | Package | Change |
+| --- | --- | --- |
+| `/usr/lib64/qt5/qml/Sailfish/Weather/DailyForecastItem.qml` | sailfish-components-weather-qt5 | wind lines, off by default |
+| `/usr/lib64/qt5/qml/Sailfish/Weather/HourlyForecastItem.qml` | sailfish-components-weather-qt5 | wind lines, off by default |
+| `/usr/lib64/qt5/qml/Sailfish/Weather/WeatherBanner.qml` | sailfish-components-weather-qt5 | switches the wind lines on |
+| `/usr/share/sailfish-weather/backends/MetNorwayBackend.qml` | sailfish-weather-backend-metnorway | wind in the hourly data |
+| `/usr/share/sailfish-weather/backends/OpenWeatherBackend.qml` | sailfish-weather-backend-openweather | wind in the hourly data |
+| `/usr/share/sailfish-weather/backends/OpenMeteoBackend.qml` | sailfish-weather-backend-openmeteo | wind in the hourly request and data |
+| `/usr/share/sailfish-weather/backends/ForecaWeatherBackend.qml` | sailfish-weather-backend-foreca | wind in the hourly data |
+
+On 32-bit devices the QML files live under `/usr/lib/qt5/qml` instead; the
+script finds them there. Backends that are not installed are skipped. The
+daily data already contained the wind, only the hourly data needed it.
+
+Every applied diff is recorded under `/var/lib/sailfish-weather-wind/`, so
+uninstalling restores the original files. `rpm -V` of Jolla's packages
+reports the patched files as modified while this package is installed;
+that is expected.
+
+**OS updates** replace the files. RPM triggers re-apply the diffs after
+Jolla's packages were updated. If a diff no longer fits a new version of a
+file, it is skipped with a message and that part stays unpatched until this
+package is updated. Nothing is ever written to a file the diff does not fit.
+
+The script can also be run by hand:
+
+```
+devel-su sailfish-weather-wind status   # patched / not patched per file
+devel-su sailfish-weather-wind apply
+devel-su sailfish-weather-wind remove
+```
+
+## Data providers
+
+All four backends of sailfish-weather 1.3.11 are covered: MET Norway (the
+default), OpenWeather, Open-Meteo and Foreca. MET Norway was tested with
+live data; OpenWeather, Open-Meteo and Foreca were tested with synthetic
+responses shaped like their APIs. The Foreca hourly field names
+(`windSpeed`, `windDir`) come from Foreca's API documentation and were not
+checked against the live service. A missing wind value hides the wind lines
+for that column instead of showing a wrong number.
+
+## Development
+
+* `src/` holds the complete modified files, based on sailfish-weather 1.3.11.
+* `patches/` holds the diffs the package installs; `tools/make-patches.sh`
+  regenerates them from `src/` against the pristine files of the release.
+* `tests/delegates.qml` checks the layout of the patched delegates without a
+  visible window (`QML2_IMPORT_PATH` pointing to a copy of the module with
+  the patched files, `QT_LOGGING_TO_CONSOLE=1 qmlscene tests/delegates.qml`).
+* `tests/run-backends.sh` runs the patched backend parsers against a MET
+  Norway response and synthetic responses of the other providers.
+* `tools/build-rpm.sh` builds the noarch RPM on a Linux box with `rpmbuild`.
+
+## License
+
+BSD-3-Clause, the license of sailfish-weather. The modified files keep
+Jolla's copyright notices.

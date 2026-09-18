@@ -1,0 +1,12 @@
+--- a/backends/MetNorwayBackend.qml
++++ b/backends/MetNorwayBackend.qml
+@@ -129,6 +129,9 @@
+                 var weather = getWeatherData(entry)
+                 weather.timestamp = new Date(entry.time)
+                 weather.temperature = details.air_temperature
++                weather.windSpeed = details.wind_speed !== undefined ? Math.round(details.wind_speed) : -1
++                weather.windDirection = details.wind_from_direction !== undefined
++                        ? details.wind_from_direction : -1
+                 weatherData[weatherData.length] = weather
+             }
+ 

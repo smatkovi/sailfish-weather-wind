@@ -1,0 +1,127 @@
+#!/bin/sh
+# sailfish-weather-wind - apply or remove the wind forecast patches
+#
+# Usage: sailfish-weather-wind apply|remove|status
+#
+# The patches change QML files that belong to Jolla's weather packages.
+# Every applied diff is recorded under /var/lib/sailfish-weather-wind so
+# that it can be reverted later, also after this package was upgraded.
+# ROOT may be set to work on a copy of the file system (tests).
+
+ROOT=${SAILFISH_WEATHER_WIND_ROOT:-}
+PATCHDIR=${SAILFISH_WEATHER_WIND_PATCHES:-/usr/share/sailfish-weather-wind/patches}
+STATEDIR=$ROOT/var/lib/sailfish-weather-wind/applied
+BACKENDDIR=$ROOT/usr/share/sailfish-weather/backends
+
+if [ -d "$ROOT/usr/lib64/qt5/qml/Sailfish/Weather" ]; then
+    QMLDIR=$ROOT/usr/lib64/qt5/qml/Sailfish/Weather
+else
+    QMLDIR=$ROOT/usr/lib/qt5/qml/Sailfish/Weather
+fi
+
+PATCH="patch -s -f --no-backup-if-mismatch"
+
+target_for() {
+    case "$1" in
+        DailyForecastItem.qml|HourlyForecastItem.qml|WeatherBanner.qml) echo "$QMLDIR/$1" ;;
+        *Backend.qml) echo "$BACKENDDIR/$1" ;;
+        *) echo "" ;;
+    esac
+}
+
+can_apply()  { $PATCH --dry-run -N "$1" < "$2" > /dev/null 2>&1; }
+can_revert() { $PATCH --dry-run -R "$1" < "$2" > /dev/null 2>&1; }
+do_apply()   { $PATCH -N "$1" < "$2" > /dev/null 2>&1; }
+do_revert()  { $PATCH -R "$1" < "$2" > /dev/null 2>&1; }
+
+revert_recorded() {
+    # $1 = name, $2 = target, $3 = state file
+    if [ -f "$2" ] && can_revert "$2" "$3"; then
+        do_revert "$2" "$3" && echo "$1: restored"
+    else
+        echo "$1: not reverted, the installed file is not the patched one"
+    fi
+    rm -f "$3"
+}
+
+apply_all() {
+    mkdir -p "$STATEDIR"
+    for diff in "$PATCHDIR"/*.diff; do
+        [ -f "$diff" ] || continue
+        name=$(basename "$diff" .diff)
+        target=$(target_for "$name")
+        state=$STATEDIR/$name.diff
+        if [ -z "$target" ] || [ ! -f "$target" ]; then
+            echo "$name: not installed, skipped"
+            rm -f "$state"
+            continue
+        fi
+        if [ -f "$state" ]; then
+            if cmp -s "$state" "$diff" && can_revert "$target" "$state"; then
+                echo "$name: already patched"
+                continue
+            fi
+            # Another version of the patch is in the file, or the file was replaced
+            if can_revert "$target" "$state"; then
+                do_revert "$target" "$state"
+            fi
+            rm -f "$state"
+        fi
+        if can_apply "$target" "$diff"; then
+            if do_apply "$target" "$diff"; then
+                cp "$diff" "$state"
+                echo "$name: patched"
+            else
+                echo "$name: patching failed" >&2
+            fi
+        elif can_revert "$target" "$diff"; then
+            cp "$diff" "$state"
+            echo "$name: already patched"
+        else
+            echo "$name: the patch does not fit the installed version, skipped" >&2
+        fi
+    done
+    # Patches that this version no longer ships
+    for state in "$STATEDIR"/*.diff; do
+        [ -f "$state" ] || continue
+        name=$(basename "$state" .diff)
+        [ -f "$PATCHDIR/$name.diff" ] && continue
+        revert_recorded "$name" "$(target_for "$name")" "$state"
+    done
+}
+
+remove_all() {
+    for state in "$STATEDIR"/*.diff; do
+        [ -f "$state" ] || continue
+        name=$(basename "$state" .diff)
+        revert_recorded "$name" "$(target_for "$name")" "$state"
+    done
+}
+
+status_all() {
+    rc=0
+    for diff in "$PATCHDIR"/*.diff; do
+        [ -f "$diff" ] || continue
+        name=$(basename "$diff" .diff)
+        target=$(target_for "$name")
+        if [ -z "$target" ] || [ ! -f "$target" ]; then
+            echo "$name: not installed"
+        elif can_revert "$target" "$diff"; then
+            echo "$name: patched"
+        elif can_apply "$target" "$diff"; then
+            echo "$name: not patched"
+            rc=1
+        else
+            echo "$name: unknown version, patch does not fit"
+            rc=1
+        fi
+    done
+    return $rc
+}
+
+case "$1" in
+    apply) apply_all ;;
+    remove) remove_all ;;
+    status) status_all ;;
+    *) echo "Usage: $(basename "$0") apply|remove|status" >&2; exit 2 ;;
+esac

@@ -1,0 +1,22 @@
+--- a/backends/OpenMeteoBackend.qml
++++ b/backends/OpenMeteoBackend.qml
+@@ -70,7 +70,7 @@
+ 
+     function forecastUrl(weather, isHourly) {
+         var variables = isHourly
+-                ? "temperature_2m,weather_code,cloud_cover,is_day"
++                ? "temperature_2m,weather_code,cloud_cover,is_day,wind_speed_10m,wind_direction_10m"
+                 : "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_direction_10m_dominant"
+ 
+         return forecastBaseUrl(weather)
+@@ -124,6 +124,10 @@
+                         hourly.is_day ? hourly.is_day[i] : undefined)
+             weather.timestamp = new Date(hourly.time[i] * 1000)
+             weather.temperature = hourly.temperature_2m[i]
++            weather.windSpeed = hourly.wind_speed_10m && hourly.wind_speed_10m[i] !== undefined
++                    ? Math.round(hourly.wind_speed_10m[i]) : -1
++            weather.windDirection = hourly.wind_direction_10m && hourly.wind_direction_10m[i] !== undefined
++                    ? hourly.wind_direction_10m[i] : -1
+             weatherData[weatherData.length] = weather
+         }
+ 
