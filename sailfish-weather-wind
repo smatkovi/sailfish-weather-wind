@@ -96,6 +96,7 @@ remove_all() {
         name=$(basename "$state" .diff)
         revert_recorded "$name" "$(target_for "$name")" "$state"
     done
+    rmdir "$STATEDIR" 2> /dev/null || :
 }
 
 status_all() {
