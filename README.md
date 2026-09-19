@@ -15,8 +15,9 @@ in the daily as well as in the hourly forecast.
 ```
 
 * **Speed** in m/s. The daily view shows the maximum of the day, the same
-  value the Weather app shows on its detail page; the hourly view shows the
-  speed at that hour.
+  value the Weather app shows on its detail page, with the direction of the
+  entry nearest to midday (Open-Meteo: the dominant direction of the day);
+  the hourly view shows speed and direction at that hour.
 * **Direction** as an arrow and a compass point. The arrow points where the
   wind blows to, the same convention as the wind graphic in the Weather app.
   The letters name the direction the wind comes from, as in weather reports
@@ -57,7 +58,9 @@ sailfish-weather-wind`) and restart the home screen again.
 
 This is not a Patchmanager patch and Patchmanager is not needed. The
 package ships small unified diffs against QML files of Jolla's weather
-packages and applies them with `patch` when it is installed:
+packages and applies them with `patch` when it is installed (if a
+Patchmanager patch has one of these files mounted, that file is skipped and
+the rest is applied):
 
 | File | Package | Change |
 | --- | --- | --- |
