@@ -124,9 +124,9 @@ QtObject {
                         hourly.is_day ? hourly.is_day[i] : undefined)
             weather.timestamp = new Date(hourly.time[i] * 1000)
             weather.temperature = hourly.temperature_2m[i]
-            weather.windSpeed = hourly.wind_speed_10m && hourly.wind_speed_10m[i] !== undefined
+            weather.windSpeed = hourly.wind_speed_10m && hourly.wind_speed_10m[i] != null
                     ? Math.round(hourly.wind_speed_10m[i]) : -1
-            weather.windDirection = hourly.wind_direction_10m && hourly.wind_direction_10m[i] !== undefined
+            weather.windDirection = hourly.wind_direction_10m && hourly.wind_direction_10m[i] != null
                     ? hourly.wind_direction_10m[i] : -1
             weatherData[weatherData.length] = weather
         }

@@ -31,7 +31,7 @@ installing or removing it.
 install -D -m 0755 %{name} %{buildroot}%{_bindir}/%{name}
 install -d %{buildroot}%{_datadir}/%{name}/patches
 install -m 0644 patches/*.diff %{buildroot}%{_datadir}/%{name}/patches/
-install -d %{buildroot}%{_localstatedir}/lib/%{name}
+install -d %{buildroot}%{_localstatedir}/lib/%{name}/applied
 install -D -m 0644 README.md %{buildroot}%{_datadir}/doc/%{name}/README.md
 
 %post
@@ -42,6 +42,11 @@ with Sailfish Utilities (Restart home screen) or with
     systemctl --user restart lipstick
 Running apps are closed by that. Rebooting works as well.
 EOM
+
+# On an upgrade %post still sees the previous version's diffs; %posttrans runs
+# after they are gone and reverts diffs this version no longer ships
+%posttrans
+%{_bindir}/%{name} apply || :
 
 %preun
 if [ "$1" = 0 ]; then
@@ -61,6 +66,7 @@ fi
 %{_bindir}/%{name}
 %{_datadir}/%{name}
 %dir %{_localstatedir}/lib/%{name}
+%dir %{_localstatedir}/lib/%{name}/applied
 %{_datadir}/doc/%{name}
 
 %changelog

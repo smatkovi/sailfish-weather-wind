@@ -26,7 +26,9 @@ in the daily as well as in the hourly forecast.
   Latvian, Hungarian, Turkish, Russian and Greek; everything else gets
   N, NE, E, SE, S, SW, W, NW).
 * The Weather app itself is not changed. Its forecast page keeps the fixed
-  height it has, so the wind lines are switched on only in the Events view.
+  height it has, so the wind lines are switched on only in the Events view:
+  the forecast items show them when their parent item carries a `showWind`
+  property, which only the Events view banner has.
 
 Tested on Sailfish OS 5.2.0.17 with sailfish-weather 1.3.11.
 
@@ -59,9 +61,9 @@ packages and applies them with `patch` when it is installed:
 
 | File | Package | Change |
 | --- | --- | --- |
-| `/usr/lib64/qt5/qml/Sailfish/Weather/DailyForecastItem.qml` | sailfish-components-weather-qt5 | wind lines, off by default |
-| `/usr/lib64/qt5/qml/Sailfish/Weather/HourlyForecastItem.qml` | sailfish-components-weather-qt5 | wind lines, off by default |
-| `/usr/lib64/qt5/qml/Sailfish/Weather/WeatherBanner.qml` | sailfish-components-weather-qt5 | switches the wind lines on |
+| `/usr/lib64/qt5/qml/Sailfish/Weather/DailyForecastItem.qml` | sailfish-components-weather-qt5 | wind lines, shown only under a parent with `showWind` |
+| `/usr/lib64/qt5/qml/Sailfish/Weather/HourlyForecastItem.qml` | sailfish-components-weather-qt5 | wind lines, shown only under a parent with `showWind` |
+| `/usr/lib64/qt5/qml/Sailfish/Weather/WeatherBanner.qml` | sailfish-components-weather-qt5 | `showWind` on the delegate items of the Events view |
 | `/usr/share/sailfish-weather/backends/MetNorwayBackend.qml` | sailfish-weather-backend-metnorway | wind in the hourly data |
 | `/usr/share/sailfish-weather/backends/OpenWeatherBackend.qml` | sailfish-weather-backend-openweather | wind in the hourly data |
 | `/usr/share/sailfish-weather/backends/OpenMeteoBackend.qml` | sailfish-weather-backend-openmeteo | wind in the hourly request and data |
@@ -77,17 +79,25 @@ reports the patched files as modified while this package is installed;
 that is expected.
 
 **OS updates** replace the files. RPM triggers re-apply the diffs after
-Jolla's packages were updated. If a diff no longer fits a new version of a
-file, it is skipped with a message and that part stays unpatched until this
-package is updated. Nothing is ever written to a file the diff does not fit.
+Jolla's packages were updated. A diff is applied only where all of its
+context lines still match (`patch -F0`); if a new version of a file changed
+those lines, the diff is skipped with a message and that file stays
+unpatched until this package is updated. Every file is patched on its own,
+and each change is safe alone: unpatched forecast items simply show no wind
+lines, an unpatched banner switches none on, and an unpatched backend
+delivers no hourly wind. The widget itself keeps working in every
+combination.
 
-The script can also be run by hand:
+The script can also be run by hand (`status` works as a normal user, the
+other two need root):
 
 ```
-devel-su sailfish-weather-wind status   # patched / not patched per file
+sailfish-weather-wind status            # patched / not patched per file
 devel-su sailfish-weather-wind apply
 devel-su sailfish-weather-wind remove
 ```
+
+`apply` and `remove` exit with 1 when something could not be done.
 
 ## Data providers
 
@@ -109,6 +119,8 @@ for that column instead of showing a wrong number.
   the patched files, `QT_LOGGING_TO_CONSOLE=1 qmlscene tests/delegates.qml`).
 * `tests/run-backends.sh` runs the patched backend parsers against a MET
   Norway response and synthetic responses of the other providers.
+* `tests/banner.qml` instantiates the installed `WeatherBanner` with live
+  data and prints the forecast rows and wind labels of both modes.
 * `tools/build-rpm.sh` builds the noarch RPM on a Linux box with `rpmbuild`.
 
 ## License

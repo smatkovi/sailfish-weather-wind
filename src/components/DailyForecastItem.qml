@@ -9,11 +9,14 @@ import Sailfish.Weather 1.0
 
 Column {
     property bool highlighted
-    // sailfish-weather-wind: show wind speed and direction below the forecast
-    property bool showWind
-    readonly property bool _hasWindSpeed: showWind && model.maximumWindSpeed !== undefined
+    // sailfish-weather-wind: show wind speed and direction below the forecast.
+    // Switched on by a showWind property on the parent item (the Events view banner does that)
+    property bool showWind: parent && parent.showWind === true
+    // The model has wind roles at all (all rows of a model have them or none, so columns stay equal)
+    readonly property bool _hasWindRoles: showWind && model.maximumWindSpeed !== undefined
+    readonly property bool _hasWindSpeed: _hasWindRoles && typeof model.maximumWindSpeed === "number"
                                           && model.maximumWindSpeed >= 0
-    readonly property bool _hasWindDirection: showWind && model.windDirection !== undefined
+    readonly property bool _hasWindDirection: _hasWindRoles && typeof model.windDirection === "number"
                                               && model.windDirection >= 0
 
     // Compass point the wind blows from, abbreviated in the UI language
@@ -83,16 +86,18 @@ Column {
     }
     Label {
         // Maximum wind speed of the day
-        visible: _hasWindSpeed
+        visible: _hasWindRoles
+        opacity: _hasWindSpeed ? 1.0 : 0.0
         anchors.horizontalCenter: parent.horizontalCenter
         //: Meters per second, short form
         //% "m/s"
-        text: _hasWindSpeed ? model.maximumWindSpeed + " " + qsTrId("weather-la-m_per_s") : ""
+        text: _hasWindSpeed ? model.maximumWindSpeed + " " + qsTrId("weather-la-m_per_s") : " "
         color: highlighted ? Theme.secondaryHighlightColor : Theme.secondaryColor
         font.pixelSize: Theme.fontSizeExtraSmall
     }
     Row {
-        visible: _hasWindDirection
+        visible: _hasWindRoles
+        opacity: _hasWindDirection ? 1.0 : 0.0
         anchors.horizontalCenter: parent.horizontalCenter
         spacing: Theme.paddingSmall
 

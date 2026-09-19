@@ -19,7 +19,9 @@ else
     QMLDIR=$ROOT/usr/lib/qt5/qml/Sailfish/Weather
 fi
 
-PATCH="patch -s -f --no-backup-if-mismatch"
+# -F0: a hunk is only applied where all its context lines match exactly
+PATCH="patch -s -f -F0 --no-backup-if-mismatch"
+failed=0
 
 target_for() {
     case "$1" in
@@ -37,15 +39,35 @@ do_revert()  { $PATCH -R "$1" < "$2" > /dev/null 2>&1; }
 revert_recorded() {
     # $1 = name, $2 = target, $3 = state file
     if [ -f "$2" ] && can_revert "$2" "$3"; then
-        do_revert "$2" "$3" && echo "$1: restored"
+        if do_revert "$2" "$3"; then
+            echo "$1: restored"
+        else
+            echo "$1: reverting failed" >&2
+            failed=1
+        fi
     else
         echo "$1: not reverted, the installed file is not the patched one"
     fi
-    rm -f "$3"
+    rm -f "$3" || failed=1
+}
+
+need_root() {
+    if [ -z "$ROOT" ] && [ "$(id -u)" != 0 ]; then
+        echo "$(basename "$0"): $1 needs root (devel-su)" >&2
+        exit 1
+    fi
+}
+
+have_patches() {
+    for diff in "$PATCHDIR"/*.diff; do
+        [ -f "$diff" ] && return 0
+    done
+    echo "$(basename "$0"): no patches found in $PATCHDIR" >&2
+    return 1
 }
 
 apply_all() {
-    mkdir -p "$STATEDIR"
+    mkdir -p "$STATEDIR" || return 1
     for diff in "$PATCHDIR"/*.diff; do
         [ -f "$diff" ] || continue
         name=$(basename "$diff" .diff)
@@ -68,11 +90,11 @@ apply_all() {
             rm -f "$state"
         fi
         if can_apply "$target" "$diff"; then
-            if do_apply "$target" "$diff"; then
-                cp "$diff" "$state"
+            if do_apply "$target" "$diff" && cp "$diff" "$state"; then
                 echo "$name: patched"
             else
                 echo "$name: patching failed" >&2
+                failed=1
             fi
         elif can_revert "$target" "$diff"; then
             cp "$diff" "$state"
@@ -88,6 +110,7 @@ apply_all() {
         [ -f "$PATCHDIR/$name.diff" ] && continue
         revert_recorded "$name" "$(target_for "$name")" "$state"
     done
+    return $failed
 }
 
 remove_all() {
@@ -96,7 +119,7 @@ remove_all() {
         name=$(basename "$state" .diff)
         revert_recorded "$name" "$(target_for "$name")" "$state"
     done
-    rmdir "$STATEDIR" 2> /dev/null || :
+    return $failed
 }
 
 status_all() {
@@ -121,8 +144,8 @@ status_all() {
 }
 
 case "$1" in
-    apply) apply_all ;;
-    remove) remove_all ;;
-    status) status_all ;;
+    apply) need_root apply; have_patches && apply_all ;;
+    remove) need_root remove; remove_all ;;
+    status) have_patches && status_all ;;
     *) echo "Usage: $(basename "$0") apply|remove|status" >&2; exit 2 ;;
 esac

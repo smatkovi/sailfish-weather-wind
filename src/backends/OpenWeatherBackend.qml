@@ -94,8 +94,8 @@ QtObject {
                 weather.high = data.main.temp_max
                 weather.low = data.main.temp_min
             } else {
-                weather.windSpeed = data.wind && data.wind.speed !== undefined ? Math.round(data.wind.speed) : -1
-                weather.windDirection = data.wind && data.wind.deg !== undefined ? data.wind.deg : -1
+                weather.windSpeed = data.wind && data.wind.speed != null ? Math.round(data.wind.speed) : -1
+                weather.windDirection = data.wind && data.wind.deg != null ? data.wind.deg : -1
             }
             weatherData[weatherData.length] = weather
         }

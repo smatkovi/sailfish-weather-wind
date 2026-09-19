@@ -1,18 +1,22 @@
 --- a/components/WeatherBanner.qml
 +++ b/components/WeatherBanner.qml
-@@ -217,6 +217,7 @@
+@@ -213,6 +213,9 @@
+                         }
+ 
+                         delegate: Item {
++                            // sailfish-weather-wind: the forecast item shows wind lines when its parent has this
++                            property bool showWind: true
++
+                             width: dailyForecastList.itemWidth
                              height: dailyForecastList.height
                              DailyForecastItem {
-                                 highlighted: weatherBanner.highlighted
-+                                showWind: true
-                                 onHeightChanged: if (model.index == 0) dailyForecastList.itemHeight = height
-                             }
+@@ -298,6 +301,9 @@
                          }
-@@ -304,6 +305,7 @@
-                             HourlyForecastItem {
-                                 hourMode: hourlyForecastList.hourMode
-                                 highlighted: weatherBanner.highlighted
-+                                showWind: true
-                                 onHeightChanged: if (model.index == 0) hourlyForecastList.itemHeight = height
-                             }
-                         }
+ 
+                         delegate: Item {
++                            // sailfish-weather-wind: the forecast item shows wind lines when its parent has this
++                            property bool showWind: true
++
+                             width: hourlyForecastList.itemWidth
+                             height: hourlyForecastList.height
+ 

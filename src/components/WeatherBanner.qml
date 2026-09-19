@@ -213,11 +213,13 @@ ListItem {
                         }
 
                         delegate: Item {
+                            // sailfish-weather-wind: the forecast item shows wind lines when its parent has this
+                            property bool showWind: true
+
                             width: dailyForecastList.itemWidth
                             height: dailyForecastList.height
                             DailyForecastItem {
                                 highlighted: weatherBanner.highlighted
-                                showWind: true
                                 onHeightChanged: if (model.index == 0) dailyForecastList.itemHeight = height
                             }
                         }
@@ -299,13 +301,15 @@ ListItem {
                         }
 
                         delegate: Item {
+                            // sailfish-weather-wind: the forecast item shows wind lines when its parent has this
+                            property bool showWind: true
+
                             width: hourlyForecastList.itemWidth
                             height: hourlyForecastList.height
 
                             HourlyForecastItem {
                                 hourMode: hourlyForecastList.hourMode
                                 highlighted: weatherBanner.highlighted
-                                showWind: true
                                 onHeightChanged: if (model.index == 0) hourlyForecastList.itemHeight = height
                             }
                         }

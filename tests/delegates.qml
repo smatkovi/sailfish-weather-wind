@@ -57,10 +57,10 @@ ApplicationWindow {
             columnCount: 6
             model: dailyModel
             delegate: Item {
+                property bool showWind: true
                 width: dailyList.itemWidth
                 height: dailyList.height
                 DailyForecastItem {
-                    showWind: true
                     onHeightChanged: if (model.index == 0) dailyList.itemHeight = height
                 }
             }
@@ -70,10 +70,10 @@ ApplicationWindow {
             columnCount: 6
             model: hourlyModel
             delegate: Item {
+                property bool showWind: true
                 width: hourlyList.itemWidth
                 height: hourlyList.height
                 HourlyForecastItem {
-                    showWind: true
                     onHeightChanged: if (model.index == 0) hourlyList.itemHeight = height
                 }
             }
@@ -83,10 +83,10 @@ ApplicationWindow {
             columnCount: 6
             model: plainModel
             delegate: Item {
+                property bool showWind: true
                 width: plainList.itemWidth
                 height: plainList.height
                 HourlyForecastItem {
-                    showWind: true
                     onHeightChanged: if (model.index == 0) plainList.itemHeight = height
                 }
             }

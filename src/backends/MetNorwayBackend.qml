@@ -129,9 +129,8 @@ QtObject {
                 var weather = getWeatherData(entry)
                 weather.timestamp = new Date(entry.time)
                 weather.temperature = details.air_temperature
-                weather.windSpeed = details.wind_speed !== undefined ? Math.round(details.wind_speed) : -1
-                weather.windDirection = details.wind_from_direction !== undefined
-                        ? details.wind_from_direction : -1
+                weather.windSpeed = details.wind_speed != null ? Math.round(details.wind_speed) : -1
+                weather.windDirection = details.wind_from_direction != null ? details.wind_from_direction : -1
                 weatherData[weatherData.length] = weather
             }
 

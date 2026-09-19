@@ -66,6 +66,14 @@ Item {
         var h2 = { "time": h.time, "temperature_2m": h.temperature_2m, "weather_code": h.weather_code,
                    "cloud_cover": h.cloud_cover, "is_day": h.is_day }
         summarize("openmeteo hourly, no wind arrays", om.handleForecastResult({ "hourly": h2 }, true, 6, 4), "windSpeed")
+        var h3 = JSON.parse(JSON.stringify(h))
+        h3.wind_speed_10m[1] = null
+        h3.wind_direction_10m[1] = null
+        summarize("openmeteo hourly, null wind in entry 1", om.handleForecastResult({ "hourly": h3 }, true, 6, 4), "windSpeed")
+        var nullMet = JSON.parse(JSON.stringify(Data.METJSON))
+        nullMet.properties.timeseries[2].data.instant.details.wind_speed = null
+        nullMet.properties.timeseries[2].data.instant.details.wind_from_direction = null
+        summarize("met hourly, null wind in entry 2", met.handleForecastResult(nullMet, true, 6, 4), "windSpeed")
 
         var fc = load("ForecaWeatherBackend.qml")
         var f = []

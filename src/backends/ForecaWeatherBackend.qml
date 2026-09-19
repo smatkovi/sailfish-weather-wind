@@ -103,8 +103,8 @@ QtObject {
                 if (i % 3 !== 0) continue
                 weather.timestamp =  new Date(data.time)
                 weather.temperature = data.temperature
-                weather.windSpeed = data.windSpeed !== undefined ? Math.round(data.windSpeed) : -1
-                weather.windDirection = data.windDir !== undefined ? data.windDir : -1
+                weather.windSpeed = data.windSpeed != null ? Math.round(data.windSpeed) : -1
+                weather.windDirection = data.windDir != null ? data.windDir : -1
             } else {
                 var dateArray = data.date.split("-")
                 weather.timestamp = new Date(parseInt(dateArray[0]),
